@@ -1,0 +1,76 @@
+openapi: 3.1.0
+info:
+  title: GreenShop API
+  version: 1.0.0
+servers:
+  - url: https://api.greenshop.example
+paths:
+  /v1/products:
+    get:
+      summary: Список товарів
+      parameters:
+        - name: filter
+          in: query
+          schema: { type: string }
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [popularity, price_asc, price_desc, new, discount]
+      responses:
+        "200": { description: OK }
+  /v1/cart/items:
+    post:
+      summary: Додати товар у кошик
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [product_id, qty]
+              properties:
+                product_id: { type: integer, example: 1001 }
+                qty: { type: integer, minimum: 1, example: 1 }
+      responses:
+        "201": { description: Created }
+        "409": { description: Duplicate due to idempotency }
+  /v1/orders:
+    post:
+      summary: Створити замовлення (гостьове)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, shipping_address, items, payment_method]
+              properties:
+                email: { type: string, format: email, example: buyer@greenshop.example }
+                shipping_address:
+                  type: object
+                  required: [city, line1, postcode]
+                  properties:
+                    city: { type: string, example: Kyiv }
+                    line1: { type: string, example: "Volodymyrska St, 12" }
+                    postcode: { type: string, example: "01001" }
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [product_id, qty]
+                    properties:
+                      product_id: { type: integer, example: 1001 }
+                      qty: { type: integer, example: 1 }
+                payment_method:
+                  type: string
+                  enum: [card, apple_pay, google_pay, cod]
+                  example: card
+      responses:
+        "201": { description: Order Created }
+        "422": { description: Validation error }
